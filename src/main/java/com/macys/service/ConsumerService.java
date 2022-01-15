@@ -11,4 +11,8 @@ public interface ConsumerService {
 	ResponseEntity<List<FulfillmentOrder>> getXmlMessage();
 
 	ResponseEntity<List<OrderMessageJson>> getJsonMessage();
+	
+	ResponseEntity<List<FulfillmentOrder>> getXmlMessageFromGcp();
+	
+	ResponseEntity<List<OrderMessageJson>> getJsonMessageFromGcp();
 }

@@ -27,12 +27,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import com.macys.dto.json.OrderMessageJson;
 import com.macys.dto.xml.FulfillmentOrder;
 import com.macys.service.ConsumerService;
-/*
-@RunWith(SpringRunner.class)
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(classes = ConsumerControllerTest.class)
-@AutoConfigureMockMvc*/
-
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
@@ -65,6 +59,29 @@ public class ConsumerControllerTest {
 		Assertions.assertNotNull(result.getResponse());
 
 	}
+	
+	
+	
+	@Test
+	public void getGcpXmlMessageTest() throws Exception {
+
+		FulfillmentOrder fulfillmentOrder1 = mock(FulfillmentOrder.class);
+		FulfillmentOrder fulfillmentOrder2 = mock(FulfillmentOrder.class);
+		List<FulfillmentOrder> fulfillmentOrderList = new ArrayList<>();
+		fulfillmentOrderList.add(fulfillmentOrder2);
+		fulfillmentOrderList.add(fulfillmentOrder1);
+
+		when(consumerService.getXmlMessageFromGcp()).thenReturn(new ResponseEntity<>(fulfillmentOrderList, HttpStatus.OK));
+
+		RequestBuilder requestBuilder = MockMvcRequestBuilders.get("/macys/consumer/gcp/xml")
+				.accept(MediaType.APPLICATION_XML).contentType(MediaType.APPLICATION_XML);
+
+		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
+		MockHttpServletResponse response = result.getResponse();
+		assertEquals(HttpStatus.OK.value(), response.getStatus());
+		Assertions.assertNotNull(result.getResponse());
+
+	}
 
 	@Test
 	public void getJsonMessageTest() throws Exception {
@@ -76,6 +93,28 @@ public class ConsumerControllerTest {
 		ordersList.add(orederMsg2);
 
 		when(consumerService.getJsonMessage()).thenReturn(new ResponseEntity<>(ordersList, HttpStatus.OK));
+
+		RequestBuilder requestBuilder = MockMvcRequestBuilders.get("/macys/consumer/json")
+				.accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON);
+
+		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
+		MockHttpServletResponse response = result.getResponse();
+		assertEquals(HttpStatus.OK.value(), response.getStatus());
+		Assertions.assertNotNull(result.getResponse());
+
+	}
+	
+	
+	@Test
+	public void getGcpJsonMessageTest() throws Exception {
+
+		OrderMessageJson orederMsg1 = mock(OrderMessageJson.class);
+		OrderMessageJson orederMsg2 = mock(OrderMessageJson.class);
+		List<OrderMessageJson> ordersList = new ArrayList<>();
+		ordersList.add(orederMsg1);
+		ordersList.add(orederMsg2);
+
+		when(consumerService.getJsonMessageFromGcp()).thenReturn(new ResponseEntity<>(ordersList, HttpStatus.OK));
 
 		RequestBuilder requestBuilder = MockMvcRequestBuilders.get("/macys/consumer/json")
 				.accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON);

@@ -25,10 +25,26 @@ public class ConsumerController {
     ResponseEntity<List<FulfillmentOrder>> getXmlMessage() {
         return messageService.getXmlMessage();
     }
+    
+    
 
     @GetMapping(value = "/json",
             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
     ResponseEntity<List<OrderMessageJson>> getJsonMessage() {
         return messageService.getJsonMessage();
+    }
+    
+    
+    @GetMapping(value = "gcp/xml",
+            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+    ResponseEntity<List<FulfillmentOrder>> getXmlMessageFromGcp() {
+        return messageService.getXmlMessageFromGcp();
+    }
+    
+    
+    @GetMapping(value = "gcp/json",
+            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+    ResponseEntity<List<OrderMessageJson>> getJsonMessageFromGCP() {
+        return messageService.getJsonMessageFromGcp();
     }
 }

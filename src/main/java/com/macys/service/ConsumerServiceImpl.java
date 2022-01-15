@@ -11,12 +11,15 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.google.cloud.spring.pubsub.core.PubSubTemplate;
+import com.google.pubsub.v1.PubsubMessage;
 import com.macys.dto.json.OrderMessageJson;
 import com.macys.dto.xml.FulfillmentOrder;
 import com.macys.entity.json.OrderMsgJsonEntity;
@@ -49,6 +52,11 @@ public class ConsumerServiceImpl implements ConsumerService {
 
 	@Autowired
 	JsonMsgRepository jsonMsgRepository;
+	@Autowired
+	PubSubTemplate pubSubTemplate;
+
+	@Value("${spring.cloud.gcp.project-id}")
+	String projectId;
 
 	@Override
 	public ResponseEntity<List<FulfillmentOrder>> getXmlMessage() {
@@ -105,6 +113,81 @@ public class ConsumerServiceImpl implements ConsumerService {
 			}
 		}
 		return new ResponseEntity<>(orderMessageJsonList, HttpStatus.OK);
+	}
+
+	@Override
+	public ResponseEntity<List<FulfillmentOrder>> getXmlMessageFromGcp() {
+		List<FulfillmentOrder> fulfillmentOrderList = new ArrayList<>();
+
+		PubsubMessage message;
+		while ((message = pubSubTemplate.pullNext(ConsumerConstants.SUB_GCP_XML)) != null) {
+			String xmlMessage = message.getData().toStringUtf8();
+			FulfillmentOrder fulfillmentOrder = saveGcpXmlMessageToDb(xmlMessage);
+			if (fulfillmentOrder != null) {
+				fulfillmentOrderList.add(fulfillmentOrder);
+			}
+		}
+		return new ResponseEntity<>(fulfillmentOrderList, HttpStatus.OK);
+	}
+
+	@Override
+	public ResponseEntity<List<OrderMessageJson>> getJsonMessageFromGcp() {
+
+		List<OrderMessageJson> orderMessageJsonList = new ArrayList<>();
+
+		PubsubMessage message;
+		while ((message = pubSubTemplate.pullNext(ConsumerConstants.SUB_GCP_JSON)) != null) {
+			String jsonMessage = message.getData().toStringUtf8();
+			OrderMessageJson orderMessageJson = saveGcpJsonMessageToDb(jsonMessage);
+			if (orderMessageJson != null) {
+				orderMessageJsonList.add(orderMessageJson);
+			}
+		}
+		return new ResponseEntity<>(orderMessageJsonList, HttpStatus.OK);
+	}
+
+	private OrderMessageJson saveGcpJsonMessageToDb(String jsonMessage) {
+		try {
+			OrderMessageJson orderMessageJson = new ObjectMapper().readValue(jsonMessage, OrderMessageJson.class);
+			OrderMsgJsonEntity entity = EntityToPojoUtil.jsonPojoToEntity(modelMapper, orderMessageJson);
+			OrderMsgJsonEntity entity1 = null;
+			try {
+				entity1 = jsonMsgRepository.save(entity);
+				return orderMessageJson;
+			} catch (IllegalStateException e) {
+				e.printStackTrace();
+				return null;
+			} finally {
+				if (entity1 == null) {
+					throw new SavingDataException();
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	private FulfillmentOrder saveGcpXmlMessageToDb(String xmlMessage) {
+		try {
+			FulfillmentOrder fulfillmentOrder = new XmlMapper().readValue(xmlMessage, FulfillmentOrder.class);
+			FulfillmentOrderEntity entity = EntityToPojoUtil.xmlPojoToEntity(modelMapper, fulfillmentOrder);
+			FulfillmentOrderEntity entity1 = null;
+			try {
+				entity1 = xmlMsgRepository.save(entity);
+				return fulfillmentOrder;
+			} catch (IllegalStateException e) {
+				e.printStackTrace();
+				return null;
+			} finally {
+				if (entity1 == null) {
+					throw new SavingDataException();
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 }
