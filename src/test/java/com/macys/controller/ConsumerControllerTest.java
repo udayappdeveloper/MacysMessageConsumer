@@ -116,7 +116,7 @@ public class ConsumerControllerTest {
 
 		when(consumerService.getJsonMessageFromGcp()).thenReturn(new ResponseEntity<>(ordersList, HttpStatus.OK));
 
-		RequestBuilder requestBuilder = MockMvcRequestBuilders.get("/macys/consumer/json")
+		RequestBuilder requestBuilder = MockMvcRequestBuilders.get("/macys/consumer/gcp/json")
 				.accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON);
 
 		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
